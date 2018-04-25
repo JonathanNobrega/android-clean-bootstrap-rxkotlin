@@ -14,8 +14,8 @@ import io.reactivex.schedulers.Schedulers
  * @date    27/05/2017
  */
 abstract class SingleUseCase<in PARAMS, RESULT>(
-        private val taskExecutor: TaskExecutor,
-        private val postExecutor: PostExecution
+    private val taskExecutor: TaskExecutor,
+    private val postExecutor: PostExecution
 ) {
 
     private val compDisposables = CompositeDisposable()
@@ -35,25 +35,25 @@ abstract class SingleUseCase<in PARAMS, RESULT>(
      * @param onError   Function to run on error.
      */
     fun execute(
-            params: PARAMS,
-            onSubscribe: (() -> Unit)? = null,
-            onSuccess: ((result: RESULT) -> Unit)? = null,
-            onError: ((exception: Throwable?) -> Unit)? = null
+        params: PARAMS,
+        onSubscribe: (() -> Unit)? = null,
+        onSuccess: ((result: RESULT) -> Unit)? = null,
+        onError: ((exception: Throwable?) -> Unit)? = null
     ) {
 
         val disposable = buildSingle(params)
-                .subscribeOn(Schedulers.from(taskExecutor))
-                .observeOn(postExecutor.scheduler)
-                .doOnSubscribe { onSubscribe?.invoke() }
-                .subscribeWith(object : DisposableSingleObserver<RESULT>() {
-                    override fun onError(exception: Throwable?) {
-                        onError?.invoke(exception)
-                    }
+            .subscribeOn(Schedulers.from(taskExecutor))
+            .observeOn(postExecutor.scheduler)
+            .doOnSubscribe { onSubscribe?.invoke() }
+            .subscribeWith(object : DisposableSingleObserver<RESULT>() {
+                override fun onError(e: Throwable) {
+                    onError?.invoke(e)
+                }
 
-                    override fun onSuccess(result: RESULT) {
-                        onSuccess?.invoke(result)
-                    }
-                })
+                override fun onSuccess(result: RESULT) {
+                    onSuccess?.invoke(result)
+                }
+            })
 
         compDisposables.add(disposable)
     }

@@ -14,8 +14,8 @@ import io.reactivex.schedulers.Schedulers
  * @date    27/05/2017
  */
 abstract class CompletableUseCase<in PARAMS>(
-        private val taskExecutor: TaskExecutor,
-        private val postExecutor: PostExecution
+    private val taskExecutor: TaskExecutor,
+    private val postExecutor: PostExecution
 ) {
 
     private val compDisposables = CompositeDisposable()
@@ -35,25 +35,25 @@ abstract class CompletableUseCase<in PARAMS>(
      * @param onComplete    Function to run on complete.
      */
     fun execute(
-            params: PARAMS,
-            onSubscribe: (() -> Unit)? = null,
-            onError: ((exception: Throwable?) -> Unit)? = null,
-            onComplete: (() -> Unit)? = null
+        params: PARAMS,
+        onSubscribe: (() -> Unit)? = null,
+        onError: ((exception: Throwable?) -> Unit)? = null,
+        onComplete: (() -> Unit)? = null
     ) {
 
         val disposable = buildCompletable(params)
-                .subscribeOn(Schedulers.from(taskExecutor))
-                .observeOn(postExecutor.scheduler)
-                .doOnSubscribe { onSubscribe?.invoke() }
-                .subscribeWith(object : DisposableCompletableObserver() {
-                    override fun onComplete() {
-                        onComplete?.invoke()
-                    }
+            .subscribeOn(Schedulers.from(taskExecutor))
+            .observeOn(postExecutor.scheduler)
+            .doOnSubscribe { onSubscribe?.invoke() }
+            .subscribeWith(object : DisposableCompletableObserver() {
+                override fun onError(e: Throwable) {
+                    onError?.invoke(e)
+                }
 
-                    override fun onError(exception: Throwable?) {
-                        onError?.invoke(exception)
-                    }
-                })
+                override fun onComplete() {
+                    onComplete?.invoke()
+                }
+            })
 
         compDisposables.add(disposable)
     }

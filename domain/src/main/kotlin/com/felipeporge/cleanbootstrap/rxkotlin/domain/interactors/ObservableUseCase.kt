@@ -14,8 +14,8 @@ import io.reactivex.schedulers.Schedulers
  * @date    27/05/2017
  */
 abstract class ObservableUseCase<in PARAMS, RESULT>(
-        private val taskExecutor: TaskExecutor,
-        private val postExecutor: PostExecution
+    private val taskExecutor: TaskExecutor,
+    private val postExecutor: PostExecution
 ) {
 
     private val compDisposables = CompositeDisposable()
@@ -36,30 +36,30 @@ abstract class ObservableUseCase<in PARAMS, RESULT>(
      * @param onComplete    Function to run on complete.
      */
     fun execute(
-            params: PARAMS,
-            onSubscribe: (() -> Unit)? = null,
-            onNext: ((result: RESULT) -> Unit)? = null,
-            onError: ((exception: Throwable?) -> Unit)? = null,
-            onComplete: (() -> Unit)? = null
+        params: PARAMS,
+        onSubscribe: (() -> Unit)? = null,
+        onNext: ((result: RESULT) -> Unit)? = null,
+        onError: ((exception: Throwable?) -> Unit)? = null,
+        onComplete: (() -> Unit)? = null
     ) {
 
         val disposable = buildObservable(params)
-                .subscribeOn(Schedulers.from(taskExecutor))
-                .observeOn(postExecutor.scheduler)
-                .doOnSubscribe { onSubscribe?.invoke() }
-                .subscribeWith(object : DisposableObserver<RESULT>() {
-                    override fun onNext(result: RESULT) {
-                        onNext?.invoke(result)
-                    }
+            .subscribeOn(Schedulers.from(taskExecutor))
+            .observeOn(postExecutor.scheduler)
+            .doOnSubscribe { onSubscribe?.invoke() }
+            .subscribeWith(object : DisposableObserver<RESULT>() {
+                override fun onError(e: Throwable) {
+                    onError?.invoke(e)
+                }
 
-                    override fun onError(exception: Throwable?) {
-                        onError?.invoke(exception)
-                    }
+                override fun onNext(result: RESULT) {
+                    onNext?.invoke(result)
+                }
 
-                    override fun onComplete() {
-                        onComplete?.invoke()
-                    }
-                })
+                override fun onComplete() {
+                    onComplete?.invoke()
+                }
+            })
 
         compDisposables.add(disposable)
     }
